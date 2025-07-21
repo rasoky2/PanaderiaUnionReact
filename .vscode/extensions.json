@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "sonarsource.sonarlint-vscode",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-json",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-npm-script",
+    "gruntfuggly.todo-tree",
+    "usernamehw.errorlens",
+    "ms-vscode.vscode-react-javascript-snippets"
+  ]
+} 

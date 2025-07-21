@@ -1,0 +1,47 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.workingDirectories": [
+    "."
+  ],
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "sonarlint.rules": {
+    "typescript:S1481": "off",
+    "typescript:S1854": "off"
+  },
+  "sonarlint.connectedMode.project": {
+    "projectKey": "panaderia_union"
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/*.log": true
+  },
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  "typescript.preferences.quoteStyle": "single",
+  "javascript.preferences.quoteStyle": "single"
+} 

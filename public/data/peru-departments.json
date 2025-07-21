@@ -1,0 +1,196 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBDEP": "LIMA",
+        "CCDD": "15",
+        "sucursales": 15,
+        "stockStatus": "normal",
+        "solicitudesPendientes": 5
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-77.5, -11.5],
+            [-76.5, -11.5],
+            [-76.0, -12.5],
+            [-76.5, -13.0],
+            [-77.5, -12.8],
+            [-78.0, -12.0],
+            [-77.5, -11.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBDEP": "AREQUIPA",
+        "CCDD": "04",
+        "sucursales": 8,
+        "stockStatus": "bajo",
+        "solicitudesPendientes": 12
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.0, -15.5],
+            [-71.0, -15.0],
+            [-70.5, -16.5],
+            [-71.5, -17.5],
+            [-73.5, -17.0],
+            [-74.0, -16.0],
+            [-73.0, -15.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBDEP": "CUSCO",
+        "CCDD": "08",
+        "sucursales": 6,
+        "stockStatus": "normal",
+        "solicitudesPendientes": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-73.0, -12.5],
+            [-71.0, -12.0],
+            [-70.5, -14.0],
+            [-72.0, -15.0],
+            [-74.0, -14.5],
+            [-74.5, -13.0],
+            [-73.0, -12.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBDEP": "LA LIBERTAD",
+        "CCDD": "13",
+        "sucursales": 5,
+        "stockStatus": "critico",
+        "solicitudesPendientes": 18
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-79.5, -7.5],
+            [-78.0, -7.0],
+            [-77.5, -8.5],
+            [-78.5, -9.0],
+            [-80.0, -8.8],
+            [-80.5, -8.0],
+            [-79.5, -7.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBDEP": "PIURA",
+        "CCDD": "20",
+        "sucursales": 4,
+        "stockStatus": "critico",
+        "solicitudesPendientes": 15
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-81.0, -4.5],
+            [-79.5, -4.0],
+            [-79.0, -6.0],
+            [-80.0, -6.5],
+            [-81.5, -6.0],
+            [-82.0, -5.0],
+            [-81.0, -4.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBDEP": "LORETO",
+        "CCDD": "16",
+        "sucursales": 3,
+        "stockStatus": "bajo",
+        "solicitudesPendientes": 8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.0, -2.5],
+            [-73.0, -2.0],
+            [-72.5, -5.0],
+            [-74.0, -6.0],
+            [-76.5, -5.5],
+            [-77.0, -3.5],
+            [-76.0, -2.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBDEP": "LAMBAYEQUE",
+        "CCDD": "14",
+        "sucursales": 4,
+        "stockStatus": "normal",
+        "solicitudesPendientes": 2
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-80.5, -6.0],
+            [-79.5, -5.8],
+            [-79.0, -7.0],
+            [-80.0, -7.2],
+            [-81.0, -7.0],
+            [-80.5, -6.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBDEP": "JUNIN",
+        "CCDD": "12",
+        "sucursales": 3,
+        "stockStatus": "bajo",
+        "solicitudesPendientes": 7
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.5, -10.5],
+            [-74.5, -10.0],
+            [-74.0, -12.5],
+            [-75.5, -13.0],
+            [-77.0, -12.5],
+            [-77.5, -11.0],
+            [-76.5, -10.5]
+          ]
+        ]
+      }
+    }
+  ]
+} 

@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+build/
+dist/
+*.tsbuildinfo
+
+# Generated files
+public/
+*.min.js
+*.bundle.js
+
+# Configuration files
+*.config.js
+*.config.ts
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
+
+# SonarLint
+.sonarlint/
+sonar-report.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp 

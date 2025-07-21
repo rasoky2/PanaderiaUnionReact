@@ -3,31 +3,64 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/icons-material": "^5.15.15",
+    "@mui/material": "^5.15.15",
+    "@supabase/supabase-js": "^2.42.3",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
     "@types/node": "^16.18.126",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25",
+    "@types/react-router-dom": "^5.3.3",
+    "date-fns": "^4.1.0",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
+    "mapbox-gl": "^3.12.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.2.0",
+    "react-credit-cards-2": "^1.0.3",
+    "react-dom": "^18.2.0",
+    "react-map-gl": "^8.0.4",
+    "react-router-dom": "^6.23.0",
     "react-scripts": "5.0.1",
+    "react-simple-maps": "^3.0.0",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "dev": "react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "preview": "npm run build && npx serve -s build",
+    "lint": "eslint src --ext .ts,.tsx,.js,.jsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint src --ext .ts,.tsx,.js,.jsx --fix",
+    "lint:sonar": "eslint src --ext .ts,.tsx,.js,.jsx --format json --output-file sonar-report.json",
+    "format": "prettier --write src/**/*.{ts,tsx,js,jsx,json,css,md}",
+    "format:check": "prettier --check src/**/*.{ts,tsx,js,jsx,json,css,md}",
+    "type-check": "tsc --noEmit"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_"
+        }
+      ]
+    },
+    "env": {
+      "browser": true,
+      "es6": true,
+      "node": true,
+      "jest": true
+    }
   },
   "browserslist": {
     "production": [
@@ -40,5 +73,14 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
+    "@types/react-simple-maps": "^3.0.6",
+    "jest": "^30.0.4",
+    "ts-jest": "^29.4.0"
   }
 }

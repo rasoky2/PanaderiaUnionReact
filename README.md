@@ -1,46 +1,146 @@
-# Getting Started with Create React App
+# 🥖 Panadería Unión - Sistema de Gestión
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Sistema integral de gestión de inventarios y solicitudes de stock para la cadena de panaderías más grande del Perú.
 
-## Available Scripts
+## 📋 Descripción del Proyecto
 
-In the project directory, you can run:
+Este sistema permite:
 
-### `npm start`
+### 🏠 **Homepage Promocional**
+- Página de inicio atractiva con información de la panadería
+- Productos destacados con ratings y disponibilidad
+- Historia de la empresa y estadísticas
+- Acceso al sistema de login
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### 👥 **Sistema de Usuarios**
+- **Empleados**: Gestión de solicitudes de stock para su sucursal
+- **Administradores**: Control total del sistema y vista nacional de inventarios
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### 📊 **Funcionalidades Principales**
+- Gestión de inventarios por sucursal
+- Solicitudes de stock a la central (Lima)
+- Mapa interactivo del Perú mostrando estado de sucursales
+- Dashboard de administración nacional
+- Sistema de notificaciones y alertas
 
-### `npm test`
+## 🚀 Tecnologías Utilizadas
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Frontend**: React 18 + TypeScript
+- **UI Framework**: Material-UI (MUI)
+- **Backend**: Supabase
+- **Routing**: React Router v6
+- **Styling**: Emotion (CSS-in-JS)
 
-### `npm run build`
+## 📦 Instalación
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. **Clonar el repositorio**
+   ```bash
+   git clone [URL_DEL_REPO]
+   cd panaderia_union
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. **Instalar dependencias**
+   ```bash
+   npm install
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. **Configurar variables de entorno**
+   - Crear archivo `.env` basado en `.env.example`
+   - Configurar credenciales de Supabase:
+     ```
+     REACT_APP_SUPABASE_URL=tu-supabase-url
+     REACT_APP_SUPABASE_ANON_KEY=tu-supabase-anon-key
+     ```
 
-### `npm run eject`
+4. **Iniciar el servidor de desarrollo**
+   ```bash
+   npm run dev
+   ```
+   
+   O alternativamente:
+   ```bash
+   npm start
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## 🏗️ Estructura del Proyecto
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+src/
+├── components/           # Componentes React
+│   ├── HomePage.tsx     # Página principal promocional
+│   └── LoginPage.tsx    # Sistema de autenticación
+├── config/              # Configuraciones
+│   └── supabase.config.ts
+├── services/            # Servicios y API calls
+│   └── supabase.service.ts
+├── types/               # Definiciones TypeScript
+│   └── index.ts
+└── App.tsx              # Componente principal con routing
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## 🗄️ Base de Datos (Supabase)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### Tablas Principales
 
-## Learn More
+1. **usuarios** - Información de empleados y administradores
+2. **sucursales** - Datos de las sucursales por departamento
+3. **productos** - Catálogo de productos de panadería
+4. **stock** - Inventario por sucursal
+5. **solicitudes_stock** - Pedidos de productos a la central
+6. **solicitudes_stock_items** - Detalles de los pedidos
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 👤 Credenciales de Prueba
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Empleado
+- **Email**: empleado@panaderiaunion.pe
+- **Password**: password123
+
+### Administrador
+- **Email**: admin@panaderiaunion.pe
+- **Password**: admin123
+
+## 🎨 Diseño y UI
+
+- **Colores principales**: 
+  - Marrón principal: `#8B4513`
+  - Marrón claro: `#D2691E`
+  - Fondo: `#FFF8DC`
+- **Tipografía**: Roboto
+- **Iconografía**: Material Icons
+
+## 📱 Responsive Design
+
+El sistema está optimizado para:
+- Desktop (1920x1080+)
+- Tablet (768px+)
+- Mobile (360px+)
+
+## 🚧 Próximas Características
+
+- [ ] Dashboard de empleados
+- [ ] Dashboard de administradores
+- [ ] Mapa interactivo del Perú
+- [ ] Sistema de notificaciones en tiempo real
+- [ ] Reportes y analytics
+- [ ] App móvil con React Native
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crear una branch para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la branch (`git push origin feature/AmazingFeature`)
+5. Abrir un Pull Request
+
+## 📄 Licencia
+
+Este proyecto es privado y pertenece a Panadería Unión.
+
+## 📞 Contacto
+
+- **Email**: desarrollo@panaderiaunion.pe
+- **Teléfono**: (01) 234-5678
+
+---
+
+**🥖 Panadería Unión** - *Tradición y calidad desde 1945*
