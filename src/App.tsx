@@ -6,6 +6,8 @@ import {
 } from '@mui/material';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import Checkout from './Pages/Checkout';
+import ClienteLoginPage from './Pages/ClienteLogin';
+import ClienteRegistroPage from './Pages/ClienteRegistro';
 import HomePage from './Pages/HomePage';
 import LoginPage from './Pages/LoginPage';
 import Payment from './Pages/Payment';
@@ -22,6 +24,7 @@ import EmpleadoDashboard from './Pages/empleado/EmpleadoDashboard';
 import EmpleadoLayout from './Pages/empleado/EmpleadoLayout';
 import StockGestion from './Pages/empleado/StockGestion';
 import { CarritoProvider } from './hooks/useCarrito';
+import { ClienteAuthProvider } from './hooks/useClienteAuth';
 
 // Constantes para evitar duplicación de strings literales
 const FONT_FAMILY_MONTSERRAT = '"Montserrat", sans-serif';
@@ -187,122 +190,129 @@ const theme = createTheme({
 
 function App() {
   return (
-    <CarritoProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <Routes>
-            <Route path='/' element={<HomePage />} />
-            <Route path='/login' element={<LoginPage />} />
-            <Route path='/tienda' element={<TiendaVirtual />} />
-            <Route path='/checkout' element={<Checkout />} />
-            <Route path='/payment' element={<Payment />} />
-            {/* Rutas del Administrador */}
-            <Route
-              path='/admin/dashboard'
-              element={
-                <AdminLayout>
-                  <AdminDashboard />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path='/admin/mapa'
-              element={
-                <AdminLayout>
-                  <MapaNacional />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path='/admin/sucursales'
-              element={
-                <AdminLayout>
-                  <SucursalesPage />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path='/admin/productos'
-              element={
-                <AdminLayout>
-                  <ProductosPage />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path='/admin/solicitudes'
-              element={
-                <AdminLayout>
-                  <SolicitudesPage />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path='/admin/usuarios'
-              element={
-                <AdminLayout>
-                  <UsuariosPage />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path='/admin/reportes'
-              element={
-                <AdminLayout>
-                  <ReportesPage />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path='/admin/configuracion'
-              element={
-                <AdminLayout>
-                  <Typography variant='h4'>
-                    Configuración - En Desarrollo
-                  </Typography>
-                </AdminLayout>
-              }
-            />
+    <ClienteAuthProvider>
+      <CarritoProvider>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Router
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <Routes>
+              <Route path='/' element={<HomePage />} />
+              <Route path='/login' element={<LoginPage />} />
+              <Route path='/cliente-login' element={<ClienteLoginPage />} />
+              <Route
+                path='/cliente-registro'
+                element={<ClienteRegistroPage />}
+              />
+              <Route path='/tienda' element={<TiendaVirtual />} />
+              <Route path='/checkout' element={<Checkout />} />
+              <Route path='/payment' element={<Payment />} />
+              {/* Rutas del Administrador */}
+              <Route
+                path='/admin/dashboard'
+                element={
+                  <AdminLayout>
+                    <AdminDashboard />
+                  </AdminLayout>
+                }
+              />
+              <Route
+                path='/admin/mapa'
+                element={
+                  <AdminLayout>
+                    <MapaNacional />
+                  </AdminLayout>
+                }
+              />
+              <Route
+                path='/admin/sucursales'
+                element={
+                  <AdminLayout>
+                    <SucursalesPage />
+                  </AdminLayout>
+                }
+              />
+              <Route
+                path='/admin/productos'
+                element={
+                  <AdminLayout>
+                    <ProductosPage />
+                  </AdminLayout>
+                }
+              />
+              <Route
+                path='/admin/solicitudes'
+                element={
+                  <AdminLayout>
+                    <SolicitudesPage />
+                  </AdminLayout>
+                }
+              />
+              <Route
+                path='/admin/usuarios'
+                element={
+                  <AdminLayout>
+                    <UsuariosPage />
+                  </AdminLayout>
+                }
+              />
+              <Route
+                path='/admin/reportes'
+                element={
+                  <AdminLayout>
+                    <ReportesPage />
+                  </AdminLayout>
+                }
+              />
+              <Route
+                path='/admin/configuracion'
+                element={
+                  <AdminLayout>
+                    <Typography variant='h4'>
+                      Configuración - En Desarrollo
+                    </Typography>
+                  </AdminLayout>
+                }
+              />
 
-            {/* Rutas del Empleado */}
-            <Route path='/empleado' element={<EmpleadoLayout />}>
-              <Route path='dashboard' element={<EmpleadoDashboard />} />
-              <Route path='stock' element={<StockGestion />} />
-              <Route
-                path='solicitudes'
-                element={
-                  <Typography variant='h4'>
-                    Mis Solicitudes - En Desarrollo
-                  </Typography>
-                }
-              />
-              <Route
-                path='perfil'
-                element={
-                  <Typography variant='h4'>
-                    Mi Perfil - En Desarrollo
-                  </Typography>
-                }
-              />
-              <Route
-                path='notificaciones'
-                element={
-                  <Typography variant='h4'>
-                    Notificaciones - En Desarrollo
-                  </Typography>
-                }
-              />
-            </Route>
-          </Routes>
-        </Router>
-      </ThemeProvider>
-    </CarritoProvider>
+              {/* Rutas del Empleado */}
+              <Route path='/empleado' element={<EmpleadoLayout />}>
+                <Route path='dashboard' element={<EmpleadoDashboard />} />
+                <Route path='stock' element={<StockGestion />} />
+                <Route
+                  path='solicitudes'
+                  element={
+                    <Typography variant='h4'>
+                      Mis Solicitudes - En Desarrollo
+                    </Typography>
+                  }
+                />
+                <Route
+                  path='perfil'
+                  element={
+                    <Typography variant='h4'>
+                      Mi Perfil - En Desarrollo
+                    </Typography>
+                  }
+                />
+                <Route
+                  path='notificaciones'
+                  element={
+                    <Typography variant='h4'>
+                      Notificaciones - En Desarrollo
+                    </Typography>
+                  }
+                />
+              </Route>
+            </Routes>
+          </Router>
+        </ThemeProvider>
+      </CarritoProvider>
+    </ClienteAuthProvider>
   );
 }
 

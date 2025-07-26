@@ -1,767 +1,176 @@
--- ===============================================
--- ESQUEMA DE BASE DE DATOS - PANADERÍA UNIÓN
--- Versión 3.0 - Actualizado desde Supabase - 2024
--- ===============================================
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
 
--- Limpieza inicial (opcional, para desarrollo)
--- DROP SCHEMA public CASCADE;
--- CREATE SCHEMA public;
-
--- ===============================================
--- EXTENSIONES
--- ===============================================
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
-CREATE EXTENSION IF NOT EXISTS "pg_graphql";
-CREATE EXTENSION IF NOT EXISTS "supabase_vault";
-
--- ===============================================
--- TIPOS PERSONALIZADOS (ENUMS)
--- ===============================================
-
--- Tipo ENUM para estado de stock
-CREATE TYPE stock_estado AS ENUM ('normal', 'bajo', 'critico');
-CREATE TYPE estado_stock AS ENUM ('normal', 'bajo', 'critico');
-
--- ===============================================
--- FUNCIONES Y TRIGGERS GLOBALES
--- ===============================================
-
--- Función para actualizar el timestamp 'actualizado_en'
-CREATE OR REPLACE FUNCTION actualizar_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.actualizado_en = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Función para actualizar el timestamp 'actualizado_en' (versión alternativa)
-CREATE OR REPLACE FUNCTION actualizar_timestamp_actualizado()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.actualizado_en = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- ===============================================
--- TABLA: departamentos
--- ===============================================
-CREATE TABLE IF NOT EXISTS departamentos (
-    id SERIAL PRIMARY KEY,
-    nombre TEXT NOT NULL UNIQUE,
-    centroid JSONB
+CREATE TABLE public.categorias (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  nombre text NOT NULL UNIQUE,
+  creado_en timestamp with time zone DEFAULT now(),
+  CONSTRAINT categorias_pkey PRIMARY KEY (id)
 );
-
--- ===============================================
--- TABLA: provincias
--- ===============================================
-CREATE TABLE IF NOT EXISTS provincias (
-    id SERIAL PRIMARY KEY,
-    nombre TEXT NOT NULL,
-    departamento_id INTEGER NOT NULL REFERENCES departamentos(id)
+CREATE TABLE public.costos_envio (
+  id bigint NOT NULL DEFAULT nextval('costos_envio_id_seq'::regclass),
+  departamento_origen_id integer NOT NULL,
+  departamento_destino_id integer NOT NULL,
+  peso_min_kg numeric NOT NULL DEFAULT 0.0,
+  peso_max_kg numeric NOT NULL DEFAULT 1.0,
+  costo_base numeric NOT NULL,
+  costo_por_kg_adicional numeric NOT NULL DEFAULT 0.0,
+  tiempo_entrega_dias integer NOT NULL DEFAULT 3 CHECK (tiempo_entrega_dias > 0),
+  tipo_servicio character varying NOT NULL DEFAULT 'terrestre'::character varying CHECK (tipo_servicio::text = ANY (ARRAY['terrestre'::character varying::text, 'aereo'::character varying::text, 'express'::character varying::text])),
+  activo boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT costos_envio_pkey PRIMARY KEY (id),
+  CONSTRAINT costos_envio_departamento_destino_id_fkey FOREIGN KEY (departamento_destino_id) REFERENCES public.departamentos(id),
+  CONSTRAINT costos_envio_departamento_origen_id_fkey FOREIGN KEY (departamento_origen_id) REFERENCES public.departamentos(id)
 );
-
--- ===============================================
--- TABLA: sucursales
--- ===============================================
-CREATE TABLE IF NOT EXISTS sucursales (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nombre TEXT NOT NULL,
-    provincia_id INTEGER NOT NULL REFERENCES provincias(id),
-    direccion TEXT,
-    latitud NUMERIC,
-    longitud NUMERIC,
-    estado TEXT NOT NULL DEFAULT 'activa',
-    creado_en TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE public.departamentos (
+  id integer NOT NULL DEFAULT nextval('departamentos_id_seq'::regclass),
+  nombre text NOT NULL UNIQUE,
+  centroid jsonb,
+  CONSTRAINT departamentos_pkey PRIMARY KEY (id)
 );
-CREATE INDEX IF NOT EXISTS idx_sucursales_provincia_id ON sucursales(provincia_id);
-
--- ===============================================
--- TABLA: usuarios (perfiles públicos)
--- ===============================================
-CREATE TABLE IF NOT EXISTS usuarios (
-    id UUID PRIMARY KEY, -- Coincide con auth.users.id
-    email VARCHAR(255) UNIQUE NOT NULL,
-    rol VARCHAR(20) NOT NULL CHECK (rol IN ('admin', 'empleado')),
-    nombre TEXT,
-    apellido TEXT,
-    celular VARCHAR(20),
-    sucursal_id UUID REFERENCES sucursales(id) ON DELETE SET NULL,
-    creado_en TIMESTAMPTZ DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE public.movimientos_stock (
+  id bigint NOT NULL DEFAULT nextval('movimientos_stock_id_seq'::regclass),
+  id_producto bigint NOT NULL,
+  tipo_movimiento character varying NOT NULL CHECK (tipo_movimiento::text = ANY (ARRAY['entrada'::character varying::text, 'salida'::character varying::text, 'ajuste'::character varying::text])),
+  cantidad integer NOT NULL,
+  stock_anterior integer NOT NULL,
+  stock_nuevo integer NOT NULL,
+  razon text NOT NULL,
+  id_usuario bigint NOT NULL,
+  creado_en timestamp with time zone DEFAULT now(),
+  CONSTRAINT movimientos_stock_pkey PRIMARY KEY (id),
+  CONSTRAINT movimientos_stock_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id)
 );
-CREATE INDEX IF NOT EXISTS idx_usuarios_sucursal_id ON usuarios(sucursal_id);
-
--- Agregar foreign key con auth.users
-ALTER TABLE usuarios ADD CONSTRAINT usuarios_id_fkey 
-FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
-
--- ===============================================
--- TABLA: categorias
--- ===============================================
-CREATE TABLE IF NOT EXISTS categorias (
-    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    nombre TEXT UNIQUE NOT NULL,
-    creado_en TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE public.productos (
+  id bigint NOT NULL DEFAULT nextval('productos_id_seq'::regclass),
+  nombre character varying NOT NULL,
+  descripcion text,
+  precio numeric NOT NULL,
+  categoria character varying NOT NULL,
+  url_imagen text,
+  creado_en timestamp with time zone DEFAULT now(),
+  actualizado_en timestamp with time zone DEFAULT now(),
+  stock_bajo integer DEFAULT 0,
+  stock_eficiente integer DEFAULT 0,
+  stock_recomendado integer DEFAULT 0,
+  extra_imagenes_urls ARRAY,
+  categoria_id bigint,
+  es_destacado boolean DEFAULT false,
+  es_mas_pedido boolean DEFAULT false,
+  activo boolean NOT NULL DEFAULT true,
+  precio_sin_igv numeric,
+  precio_con_igv numeric,
+  igv_porcentaje numeric DEFAULT 18.00,
+  precio_costo numeric,
+  margen_ganancia numeric,
+  precio_mayorista numeric,
+  precio_minorista numeric,
+  moneda character varying DEFAULT 'PEN'::character varying,
+  CONSTRAINT productos_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_categoria FOREIGN KEY (categoria_id) REFERENCES public.categorias(id)
 );
-
--- ===============================================
--- TABLA: productos
--- ===============================================
-CREATE TABLE IF NOT EXISTS productos (
-    id BIGSERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    descripcion TEXT,
-    categoria VARCHAR(255) NOT NULL,
-    precio DECIMAL(10, 2) NOT NULL,
-    url_imagen TEXT,
-    stock_bajo INTEGER DEFAULT 0,
-    stock_eficiente INTEGER DEFAULT 0,
-    stock_recomendado INTEGER DEFAULT 0,
-    extra_imagenes_urls TEXT[],
-    categoria_id BIGINT REFERENCES categorias(id),
-    es_destacado BOOLEAN DEFAULT false,
-    es_mas_pedido BOOLEAN DEFAULT false,
-    activo BOOLEAN NOT NULL DEFAULT true,
-    precio_sin_igv DECIMAL(10, 2),
-    precio_con_igv DECIMAL(10, 2),
-    igv_porcentaje DECIMAL(5, 2) DEFAULT 18.00,
-    precio_costo DECIMAL(10, 2),
-    margen_ganancia DECIMAL(5, 2),
-    precio_mayorista DECIMAL(10, 2),
-    precio_minorista DECIMAL(10, 2),
-    moneda VARCHAR(10) DEFAULT 'PEN',
-    creado_en TIMESTAMPTZ DEFAULT NOW(),
-    actualizado_en TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE public.provincias (
+  id integer NOT NULL DEFAULT nextval('provincias_id_seq'::regclass),
+  nombre text NOT NULL,
+  departamento_id integer NOT NULL,
+  CONSTRAINT provincias_pkey PRIMARY KEY (id),
+  CONSTRAINT provincias_departamento_id_fkey FOREIGN KEY (departamento_id) REFERENCES public.departamentos(id)
 );
-
--- Trigger para calcular precios automáticamente
-CREATE OR REPLACE FUNCTION calcular_precios_producto()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Asegurar que igv_porcentaje tenga un valor por defecto
-    IF NEW.igv_porcentaje IS NULL THEN
-        NEW.igv_porcentaje := 18.00;
-    END IF;
-    
-    -- Si se proporciona precio_sin_igv, calcular el resto
-    IF NEW.precio_sin_igv IS NOT NULL THEN
-        NEW.precio_con_igv := ROUND(NEW.precio_sin_igv * (1 + NEW.igv_porcentaje / 100), 2);
-        NEW.precio_minorista := NEW.precio_con_igv;
-        NEW.precio := NEW.precio_con_igv;
-        
-        -- Calcular precio mayorista (10% menos que minorista)
-        NEW.precio_mayorista := ROUND(NEW.precio_con_igv * 0.90, 2);
-        
-        -- Calcular margen si hay precio_costo
-        IF NEW.precio_costo IS NOT NULL AND NEW.precio_costo > 0 THEN
-            NEW.margen_ganancia := ROUND(((NEW.precio_sin_igv - NEW.precio_costo) / NEW.precio_costo) * 100, 2);
-        END IF;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_calcular_precios 
-BEFORE INSERT OR UPDATE ON productos 
-FOR EACH ROW EXECUTE FUNCTION calcular_precios_producto();
-
-CREATE TRIGGER trigger_productos_actualizado_en 
-BEFORE UPDATE ON productos 
-FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp_actualizado();
-
--- ===============================================
--- TABLA: stock (sistema de stock individual)
--- ===============================================
-CREATE TABLE IF NOT EXISTS stock (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sucursal_id UUID NOT NULL REFERENCES sucursales(id),
-    producto_id BIGINT NOT NULL REFERENCES productos(id),
-    cantidad INTEGER NOT NULL DEFAULT 0,
-    estado stock_estado NOT NULL DEFAULT 'normal',
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(sucursal_id, producto_id)
+CREATE TABLE public.solicitud_items (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  solicitud_id uuid NOT NULL,
+  producto_id bigint NOT NULL,
+  cantidad_solicitada integer NOT NULL,
+  cantidad_aprobada integer,
+  CONSTRAINT solicitud_items_pkey PRIMARY KEY (id),
+  CONSTRAINT solicitud_items_producto_id_fkey FOREIGN KEY (producto_id) REFERENCES public.productos(id),
+  CONSTRAINT solicitud_items_solicitud_id_fkey FOREIGN KEY (solicitud_id) REFERENCES public.solicitudes(id)
 );
-
-CREATE TRIGGER handle_stock_updated_at 
-BEFORE UPDATE ON stock 
-FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
-
-CREATE TRIGGER on_stock_update 
-BEFORE UPDATE ON stock 
-FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
-
--- ===============================================
--- TABLA: stock_sucursales (sistema de stock por sucursal)
--- ===============================================
-CREATE TABLE IF NOT EXISTS stock_sucursales (
-    id SERIAL PRIMARY KEY,
-    sucursal_id UUID REFERENCES sucursales(id),
-    producto_id BIGINT REFERENCES productos(id),
-    cantidad_actual INTEGER NOT NULL DEFAULT 0,
-    stock_minimo INTEGER NOT NULL DEFAULT 10,
-    stock_maximo INTEGER NOT NULL DEFAULT 100,
-    ultima_actualizacion TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(sucursal_id, producto_id)
+CREATE TABLE public.solicitudes (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  solicitante_id uuid NOT NULL,
+  sucursal_id uuid NOT NULL,
+  estado text NOT NULL DEFAULT 'pendiente'::text,
+  observaciones text,
+  CONSTRAINT solicitudes_pkey PRIMARY KEY (id),
+  CONSTRAINT solicitudes_sucursal_id_fkey FOREIGN KEY (sucursal_id) REFERENCES public.sucursales(id),
+  CONSTRAINT solicitudes_solicitante_id_fkey FOREIGN KEY (solicitante_id) REFERENCES public.usuarios(id)
 );
-
--- ===============================================
--- TABLA: solicitudes
--- ===============================================
-CREATE TABLE IF NOT EXISTS solicitudes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    solicitante_id UUID NOT NULL REFERENCES usuarios(id),
-    sucursal_id UUID NOT NULL REFERENCES sucursales(id),
-    estado TEXT NOT NULL DEFAULT 'pendiente',
-    observaciones TEXT
+CREATE TABLE public.solicitudes_stock (
+  id bigint NOT NULL DEFAULT nextval('solicitudes_stock_id_seq'::regclass),
+  id_empleado uuid NOT NULL,
+  id_producto bigint NOT NULL,
+  cantidad_solicitada integer NOT NULL,
+  estado character varying NOT NULL DEFAULT 'pendiente'::character varying CHECK (estado::text = ANY (ARRAY['pendiente'::character varying::text, 'aprobada'::character varying::text, 'rechazada'::character varying::text, 'cumplida'::character varying::text])),
+  notas text,
+  solicitado_en timestamp with time zone DEFAULT now(),
+  revisado_en timestamp with time zone,
+  revisado_por bigint,
+  CONSTRAINT solicitudes_stock_pkey PRIMARY KEY (id),
+  CONSTRAINT solicitudes_stock_id_empleado_fkey FOREIGN KEY (id_empleado) REFERENCES public.usuarios(id),
+  CONSTRAINT solicitudes_stock_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id)
 );
-
--- ===============================================
--- TABLA: solicitud_items
--- ===============================================
-CREATE TABLE IF NOT EXISTS solicitud_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    solicitud_id UUID NOT NULL REFERENCES solicitudes(id) ON DELETE CASCADE,
-    producto_id BIGINT NOT NULL REFERENCES productos(id),
-    cantidad_solicitada INTEGER NOT NULL,
-    cantidad_aprobada INTEGER
+CREATE TABLE public.stock (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  sucursal_id uuid NOT NULL,
+  producto_id bigint NOT NULL,
+  cantidad integer NOT NULL DEFAULT 0,
+  estado USER-DEFINED NOT NULL DEFAULT 'normal'::stock_estado,
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT stock_pkey PRIMARY KEY (id),
+  CONSTRAINT stock_sucursal_id_fkey FOREIGN KEY (sucursal_id) REFERENCES public.sucursales(id),
+  CONSTRAINT stock_producto_id_fkey FOREIGN KEY (producto_id) REFERENCES public.productos(id)
 );
-
--- ===============================================
--- TABLA: solicitudes_stock (sistema legacy)
--- ===============================================
-CREATE TABLE IF NOT EXISTS solicitudes_stock (
-    id BIGSERIAL PRIMARY KEY,
-    id_empleado UUID NOT NULL REFERENCES usuarios(id),
-    id_producto BIGINT NOT NULL REFERENCES productos(id),
-    cantidad_solicitada INTEGER NOT NULL,
-    estado VARCHAR(50) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'aprobada', 'rechazada', 'cumplida')),
-    notas TEXT,
-    solicitado_en TIMESTAMPTZ DEFAULT NOW(),
-    revisado_en TIMESTAMPTZ,
-    revisado_por BIGINT
+CREATE TABLE public.stock_sucursales (
+  id integer NOT NULL DEFAULT nextval('stock_sucursales_id_seq'::regclass),
+  sucursal_id uuid,
+  producto_id bigint,
+  cantidad_actual integer NOT NULL DEFAULT 0,
+  stock_minimo integer NOT NULL DEFAULT 10,
+  stock_maximo integer NOT NULL DEFAULT 100,
+  ultima_actualizacion timestamp with time zone DEFAULT now(),
+  CONSTRAINT stock_sucursales_pkey PRIMARY KEY (id),
+  CONSTRAINT stock_sucursales_sucursal_id_fkey FOREIGN KEY (sucursal_id) REFERENCES public.sucursales(id),
+  CONSTRAINT stock_sucursales_producto_id_fkey FOREIGN KEY (producto_id) REFERENCES public.productos(id)
 );
-
--- ===============================================
--- TABLA: movimientos_stock
--- ===============================================
-CREATE TABLE IF NOT EXISTS movimientos_stock (
-    id BIGSERIAL PRIMARY KEY,
-    id_producto BIGINT NOT NULL REFERENCES productos(id),
-    tipo_movimiento VARCHAR(20) NOT NULL CHECK (tipo_movimiento IN ('entrada', 'salida', 'ajuste')),
-    cantidad INTEGER NOT NULL,
-    stock_anterior INTEGER NOT NULL,
-    stock_nuevo INTEGER NOT NULL,
-    razon TEXT NOT NULL,
-    id_usuario BIGINT NOT NULL,
-    creado_en TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE public.sucursales (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  nombre text NOT NULL,
+  provincia_id integer NOT NULL,
+  direccion text,
+  creado_en timestamp with time zone DEFAULT now(),
+  estado text NOT NULL DEFAULT 'activa'::text,
+  latitud numeric,
+  longitud numeric,
+  CONSTRAINT sucursales_pkey PRIMARY KEY (id),
+  CONSTRAINT sucursales_provincia_id_fkey FOREIGN KEY (provincia_id) REFERENCES public.provincias(id)
 );
-
--- ===============================================
--- TABLA: costos_envio
--- ===============================================
-CREATE TABLE IF NOT EXISTS costos_envio (
-    id BIGSERIAL PRIMARY KEY,
-    departamento_origen_id INTEGER NOT NULL REFERENCES departamentos(id),
-    departamento_destino_id INTEGER NOT NULL REFERENCES departamentos(id),
-    peso_min_kg DECIMAL(5,2) NOT NULL DEFAULT 0.0,
-    peso_max_kg DECIMAL(5,2) NOT NULL DEFAULT 1.0,
-    costo_base DECIMAL(8,2) NOT NULL,
-    costo_por_kg_adicional DECIMAL(8,2) NOT NULL DEFAULT 0.0,
-    tiempo_entrega_dias INTEGER NOT NULL DEFAULT 3 CHECK (tiempo_entrega_dias > 0),
-    tipo_servicio VARCHAR(20) NOT NULL DEFAULT 'terrestre' CHECK (tipo_servicio IN ('terrestre', 'aereo', 'express')),
-    activo BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(departamento_origen_id, departamento_destino_id),
-    CHECK (costo_base >= 0 AND costo_por_kg_adicional >= 0),
-    CHECK (peso_max_kg > peso_min_kg)
+CREATE TABLE public.usuarios (
+  id uuid NOT NULL,
+  email character varying NOT NULL UNIQUE,
+  rol character varying NOT NULL CHECK (rol::text = ANY (ARRAY['admin'::character varying::text, 'empleado'::character varying::text])),
+  creado_en timestamp with time zone DEFAULT now(),
+  actualizado_en timestamp with time zone DEFAULT now(),
+  sucursal_id uuid,
+  nombre text,
+  apellido text,
+  celular character varying,
+  CONSTRAINT usuarios_pkey PRIMARY KEY (id),
+  CONSTRAINT usuarios_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
+  CONSTRAINT usuarios_sucursal_id_fkey FOREIGN KEY (sucursal_id) REFERENCES public.sucursales(id)
 );
-
--- ===============================================
--- TABLA: usuarios_backup (respaldo)
--- ===============================================
-CREATE TABLE IF NOT EXISTS usuarios_backup (
-    id BIGINT,
-    nombre_usuario VARCHAR(100),
-    email VARCHAR(255),
-    hash_contrasena VARCHAR(255),
-    rol VARCHAR(20),
-    nombre_completo VARCHAR(255),
-    departamento VARCHAR(100),
-    provincia VARCHAR(100),
-    creado_en TIMESTAMPTZ,
-    actualizado_en TIMESTAMPTZ
+CREATE TABLE public.usuarios_backup (
+  id bigint,
+  nombre_usuario character varying,
+  email character varying,
+  hash_contrasena character varying,
+  rol character varying,
+  nombre_completo character varying,
+  departamento character varying,
+  provincia character varying,
+  creado_en timestamp with time zone,
+  actualizado_en timestamp with time zone
 );
-
--- ===============================================
--- VISTAS
--- ===============================================
-
--- Vista para estado de departamentos
-CREATE OR REPLACE VIEW vista_estado_departamentos AS
-WITH sucursales_por_departamento AS (
-    SELECT 
-        d.id AS departamento_id,
-        d.nombre AS nombre_departamento,
-        s.id AS sucursal_id
-    FROM departamentos d
-    JOIN provincias p ON d.id = p.departamento_id
-    JOIN sucursales s ON p.id = s.provincia_id
-),
-stock_por_sucursal AS (
-    SELECT 
-        stock.sucursal_id,
-        MIN(CASE
-            WHEN stock.cantidad < 10 THEN 'critico'
-            WHEN stock.cantidad < 50 THEN 'bajo'
-            ELSE 'normal'
-        END) AS estado_minimo
-    FROM stock
-    GROUP BY stock.sucursal_id
-),
-solicitudes_por_departamento AS (
-    SELECT 
-        spd.departamento_id,
-        COUNT(ss.id) AS total_solicitudes_pendientes
-    FROM sucursales_por_departamento spd
-    JOIN usuarios u ON spd.sucursal_id = u.sucursal_id
-    JOIN solicitudes_stock ss ON u.id = ss.id_empleado
-    WHERE ss.estado = 'pendiente'
-    GROUP BY spd.departamento_id
-)
-SELECT 
-    d.nombre,
-    COUNT(DISTINCT s.id) AS total_sucursales,
-    COALESCE(MIN(sps.estado_minimo), 'normal') AS estado_general,
-    COALESCE(sol.total_solicitudes_pendientes, 0) AS total_solicitudes_pendientes
-FROM departamentos d
-LEFT JOIN provincias p ON d.id = p.departamento_id
-LEFT JOIN sucursales s ON p.id = s.provincia_id
-LEFT JOIN stock_por_sucursal sps ON s.id = sps.sucursal_id
-LEFT JOIN solicitudes_por_departamento sol ON d.id = sol.departamento_id
-GROUP BY d.nombre, sol.total_solicitudes_pendientes
-ORDER BY d.nombre;
-
--- Vista para stock de sucursales
-CREATE OR REPLACE VIEW vista_stock_sucursal AS
-SELECT 
-    s.id AS stock_id,
-    s.cantidad,
-    s.estado,
-    p.id AS producto_id,
-    p.nombre AS producto_nombre,
-    p.categoria,
-    suc.id AS sucursal_id,
-    suc.nombre AS sucursal_nombre,
-    prov.id AS provincia_id,
-    prov.nombre AS provincia_nombre,
-    dep.id AS departamento_id,
-    dep.nombre AS departamento_nombre
-FROM stock s
-JOIN productos p ON s.producto_id = p.id
-JOIN sucursales suc ON s.sucursal_id = suc.id
-JOIN provincias prov ON suc.provincia_id = prov.id
-JOIN departamentos dep ON prov.departamento_id = dep.id;
-
--- ===============================================
--- FUNCIONES RPC (Remote Procedure Call)
--- ===============================================
-
--- Función para obtener datos completos de sucursales
-CREATE OR REPLACE FUNCTION obtener_datos_completos_sucursales(p_sucursal_id UUID DEFAULT NULL)
-RETURNS TABLE(
-    id UUID,
-    nombre_sucursal TEXT,
-    departamento_id INTEGER,
-    departamento_nombre TEXT,
-    provincia_id INTEGER,
-    provincia_nombre TEXT,
-    empleados JSONB
-) AS $$
-BEGIN
-    RETURN QUERY
-    WITH sucursal_empleados AS (
-        SELECT
-            s.id AS sucursal_id,
-            jsonb_agg(
-                jsonb_build_object(
-                    'id', u.id,
-                    'nombre', u.nombre,
-                    'apellido', u.apellido
-                )
-            ) FILTER (WHERE u.id IS NOT NULL) AS empleados_data
-        FROM sucursales s
-        LEFT JOIN usuarios u ON s.id = u.sucursal_id
-        GROUP BY s.id
-    )
-    SELECT
-        s.id,
-        s.nombre AS nombre_sucursal,
-        d.id AS departamento_id,
-        d.nombre AS departamento_nombre,
-        p.id AS provincia_id,
-        p.nombre AS provincia_nombre,
-        COALESCE(se.empleados_data, '[]'::jsonb) AS empleados
-    FROM sucursales s
-    JOIN provincias p ON s.provincia_id = p.id
-    JOIN departamentos d ON p.departamento_id = d.id
-    LEFT JOIN sucursal_empleados se ON s.id = se.sucursal_id
-    WHERE p_sucursal_id IS NULL OR s.id = p_sucursal_id;
-END;
-$$ LANGUAGE plpgsql;
-
--- Función para obtener sucursales completas
-CREATE OR REPLACE FUNCTION obtener_sucursales_completas()
-RETURNS TABLE(
-    id UUID,
-    nombre_sucursal TEXT,
-    provincia_id INTEGER,
-    nombre_provincia TEXT,
-    departamento_id INTEGER,
-    nombre_departamento TEXT,
-    direccion TEXT,
-    latitud NUMERIC,
-    longitud NUMERIC,
-    estado TEXT,
-    creado_en TIMESTAMPTZ,
-    cantidad_empleados BIGINT,
-    nombres_empleados TEXT[]
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        s.id,
-        s.nombre as nombre_sucursal,
-        p.id as provincia_id,
-        p.nombre as nombre_provincia,
-        d.id as departamento_id,
-        d.nombre as nombre_departamento,
-        s.direccion,
-        s.latitud,
-        s.longitud,
-        s.estado,
-        s.creado_en,
-        COUNT(u.id) as cantidad_empleados,
-        ARRAY_AGG(CONCAT(u.nombre, ' ', u.apellido)) FILTER (WHERE u.id IS NOT NULL) as nombres_empleados
-    FROM sucursales s
-    JOIN provincias p ON s.provincia_id = p.id
-    JOIN departamentos d ON p.departamento_id = d.id
-    LEFT JOIN usuarios u ON s.id = u.sucursal_id
-    GROUP BY s.id, s.nombre, p.id, p.nombre, d.id, d.nombre, s.direccion, s.latitud, s.longitud, s.estado, s.creado_en
-    ORDER BY d.nombre, p.nombre, s.nombre;
-END;
-$$ LANGUAGE plpgsql;
-
--- Función para obtener productos con precios
-CREATE OR REPLACE FUNCTION obtener_productos_con_precios()
-RETURNS TABLE(
-    id BIGINT,
-    nombre VARCHAR,
-    descripcion TEXT,
-    categoria_nombre VARCHAR,
-    precio_sin_igv DECIMAL,
-    precio_con_igv DECIMAL,
-    igv_porcentaje DECIMAL,
-    precio_costo DECIMAL,
-    margen_ganancia DECIMAL,
-    precio_mayorista DECIMAL,
-    precio_minorista DECIMAL,
-    moneda VARCHAR,
-    url_imagen TEXT,
-    extra_imagenes_urls TEXT[],
-    stock_bajo INTEGER,
-    stock_eficiente INTEGER,
-    stock_recomendado INTEGER,
-    es_destacado BOOLEAN,
-    es_mas_pedido BOOLEAN,
-    activo BOOLEAN,
-    creado_en TIMESTAMPTZ,
-    actualizado_en TIMESTAMPTZ,
-    categoria_id BIGINT,
-    categorias JSONB
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        p.id,
-        p.nombre,
-        p.descripcion,
-        CAST(c.nombre AS varchar(50)) as categoria_nombre,
-        p.precio_sin_igv,
-        p.precio_con_igv,
-        p.igv_porcentaje,
-        p.precio_costo,
-        p.margen_ganancia,
-        p.precio_mayorista,
-        p.precio_minorista,
-        p.moneda,
-        p.url_imagen,
-        p.extra_imagenes_urls,
-        p.stock_bajo,
-        p.stock_eficiente,
-        p.stock_recomendado,
-        p.es_destacado,
-        p.es_mas_pedido,
-        p.activo,
-        p.creado_en,
-        p.actualizado_en,
-        p.categoria_id,
-        CASE 
-            WHEN c.id IS NOT NULL THEN 
-                jsonb_build_object('id', c.id, 'nombre', c.nombre)
-            ELSE NULL 
-        END as categorias
-    FROM productos p
-    LEFT JOIN categorias c ON p.categoria_id = c.id
-    ORDER BY p.nombre;
-END;
-$$ LANGUAGE plpgsql;
-
--- Función para obtener stock detallado por sucursal
-CREATE OR REPLACE FUNCTION obtener_stock_detallado_sucursal(p_sucursal_id UUID)
-RETURNS TABLE(
-    producto_id BIGINT,
-    producto_nombre VARCHAR,
-    cantidad_actual INTEGER,
-    stock_minimo INTEGER,
-    stock_maximo INTEGER,
-    estado_stock TEXT,
-    ultima_actualizacion TIMESTAMPTZ
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        st.producto_id,
-        p.nombre as producto_nombre,
-        st.cantidad_actual,
-        st.stock_minimo,
-        st.stock_maximo,
-        CASE 
-            WHEN st.cantidad_actual = 0 THEN 'critico'
-            WHEN st.cantidad_actual <= st.stock_minimo THEN 'bajo'
-            ELSE 'normal'
-        END as estado_stock,
-        st.ultima_actualizacion
-    FROM stock_sucursales st
-    JOIN productos p ON st.producto_id = p.id
-    WHERE st.sucursal_id = p_sucursal_id
-    ORDER BY p.nombre;
-END;
-$$ LANGUAGE plpgsql;
-
--- Función para actualizar stock de producto
-CREATE OR REPLACE FUNCTION actualizar_stock_producto(
-    p_sucursal_id UUID, 
-    p_producto_id BIGINT, 
-    p_nueva_cantidad INTEGER
-)
-RETURNS BOOLEAN AS $$
-BEGIN
-    INSERT INTO stock_sucursales (sucursal_id, producto_id, cantidad_actual, ultima_actualizacion)
-    VALUES (p_sucursal_id, p_producto_id, p_nueva_cantidad, NOW())
-    ON CONFLICT (sucursal_id, producto_id)
-    DO UPDATE SET 
-        cantidad_actual = p_nueva_cantidad,
-        ultima_actualizacion = NOW();
-    
-    RETURN TRUE;
-EXCEPTION
-    WHEN OTHERS THEN
-        RETURN FALSE;
-END;
-$$ LANGUAGE plpgsql;
-
--- Función para calcular costo de envío
-CREATE OR REPLACE FUNCTION calcular_costo_envio(
-    p_departamento_origen_id INTEGER, 
-    p_departamento_destino_id INTEGER, 
-    p_peso_kg DECIMAL, 
-    p_tipo_servicio VARCHAR DEFAULT 'terrestre'
-)
-RETURNS TABLE(
-    costo_total DECIMAL, 
-    tiempo_entrega INTEGER, 
-    detalle_calculo TEXT
-) AS $$
-DECLARE
-    v_costo_base DECIMAL;
-    v_costo_por_kg DECIMAL;
-    v_tiempo_entrega INTEGER;
-    v_peso_adicional DECIMAL;
-    v_costo_calculado DECIMAL;
-    v_peso_min DECIMAL;
-    v_peso_max DECIMAL;
-    v_detalle TEXT;
-BEGIN
-    -- Buscar el rango de peso apropiado
-    SELECT 
-        ce.costo_base,
-        ce.costo_por_kg_adicional,
-        ce.tiempo_entrega_dias,
-        ce.peso_min_kg,
-        ce.peso_max_kg
-    INTO 
-        v_costo_base,
-        v_costo_por_kg,
-        v_tiempo_entrega,
-        v_peso_min,
-        v_peso_max
-    FROM costos_envio ce
-    WHERE ce.departamento_origen_id = p_departamento_origen_id
-      AND ce.departamento_destino_id = p_departamento_destino_id
-      AND ce.tipo_servicio = p_tipo_servicio
-      AND p_peso_kg >= ce.peso_min_kg
-      AND p_peso_kg <= ce.peso_max_kg
-      AND ce.activo = true
-    ORDER BY ce.peso_max_kg ASC
-    LIMIT 1;
-    
-    -- Si no se encuentra, usar valores por defecto
-    IF v_costo_base IS NULL THEN
-        RETURN QUERY SELECT 
-            15.00::DECIMAL as costo_total,
-            3 as tiempo_entrega,
-            'Costo estimado - No se encontró tarifa específica'::TEXT as detalle_calculo;
-        RETURN;
-    END IF;
-    
-    -- Calcular costo
-    IF p_peso_kg <= v_peso_max THEN
-        v_costo_calculado := v_costo_base;
-        v_peso_adicional := 0;
-    ELSE
-        v_peso_adicional := p_peso_kg - v_peso_max;
-        v_costo_calculado := v_costo_base + (v_peso_adicional * v_costo_por_kg);
-    END IF;
-    
-    -- Crear detalle del cálculo
-    v_detalle := 'Costo base: S/ ' || ROUND(v_costo_base, 2)::TEXT;
-    IF v_peso_adicional > 0 THEN
-        v_detalle := v_detalle || ' + Peso adicional: ' || ROUND(v_peso_adicional, 2)::TEXT || ' kg × S/ ' || ROUND(v_costo_por_kg, 2)::TEXT;
-    END IF;
-    v_detalle := v_detalle || ' = S/ ' || ROUND(v_costo_calculado, 2)::TEXT;
-    
-    RETURN QUERY SELECT 
-        v_costo_calculado as costo_total,
-        v_tiempo_entrega,
-        v_detalle as detalle_calculo;
-END;
-$$ LANGUAGE plpgsql;
-
--- ===============================================
--- Sincronización con Supabase Auth
--- ===============================================
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.usuarios (id, email, rol, nombre, apellido)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    CASE 
-      WHEN NEW.email LIKE '%admin%' THEN 'admin'
-      ELSE 'empleado'
-    END,
-    COALESCE(NEW.raw_user_meta_data->>'nombre', 'Usuario'),
-    COALESCE(NEW.raw_user_meta_data->>'apellido', 'Nuevo')
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE handle_new_user();
-
--- ===============================================
--- POLÍTICAS RLS (Row Level Security)
--- ===============================================
-
--- Habilitar RLS en tablas sensibles
-ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
-ALTER TABLE solicitudes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE productos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE stock ENABLE ROW LEVEL SECURITY;
-ALTER TABLE solicitudes_stock ENABLE ROW LEVEL SECURITY;
-ALTER TABLE departamentos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE provincias ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sucursales ENABLE ROW LEVEL SECURITY;
-ALTER TABLE categorias ENABLE ROW LEVEL SECURITY;
-
--- Políticas básicas para lectura pública
-CREATE POLICY "product_select_policy" ON productos FOR SELECT USING (true);
-CREATE POLICY "sucursales_select_policy" ON sucursales FOR SELECT USING (true);
-CREATE POLICY "categorias_select_policy" ON categorias FOR SELECT USING (true);
-CREATE POLICY "departamentos_select_policy" ON departamentos FOR SELECT USING (true);
-CREATE POLICY "provincias_select_policy" ON provincias FOR SELECT USING (true);
-
--- Políticas para usuarios: Admins ven todo, usuarios ven su propio perfil
-CREATE POLICY "user_select_policy" ON usuarios FOR SELECT
-USING (auth.uid() = id OR (SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin');
-
-CREATE POLICY "user_update_policy" ON usuarios FOR UPDATE
-USING (auth.uid() = id OR (SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin');
-
--- ===============================================
--- DATOS DE PRUEBA Y SEMILLAS
--- ===============================================
-
--- Insertar departamentos principales del Perú
-INSERT INTO departamentos (nombre, centroid) VALUES
-('Lima', '{"lat": -12.0464, "lng": -77.0428}'::jsonb),
-('Arequipa', '{"lat": -16.4090, "lng": -71.5375}'::jsonb),
-('Cusco', '{"lat": -13.5319, "lng": -71.9675}'::jsonb),
-('La Libertad', '{"lat": -8.1090, "lng": -79.0215}'::jsonb),
-('Piura', '{"lat": -5.1945, "lng": -80.6328}'::jsonb),
-('Junín', '{"lat": -11.1590, "lng": -75.9973}'::jsonb),
-('Lambayeque', '{"lat": -6.7014, "lng": -79.9061}'::jsonb),
-('Ancash', '{"lat": -9.5260, "lng": -77.5307}'::jsonb),
-('Huánuco', '{"lat": -9.9307, "lng": -76.2422}'::jsonb),
-('San Martín', '{"lat": -6.4853, "lng": -76.3621}'::jsonb)
-ON CONFLICT (nombre) DO NOTHING;
-
--- Insertar algunas provincias principales
-INSERT INTO provincias (nombre, departamento_id) VALUES
-('Lima', (SELECT id FROM departamentos WHERE nombre = 'Lima')),
-('Callao', (SELECT id FROM departamentos WHERE nombre = 'Lima')),
-('Arequipa', (SELECT id FROM departamentos WHERE nombre = 'Arequipa')),
-('Cusco', (SELECT id FROM departamentos WHERE nombre = 'Cusco')),
-('Trujillo', (SELECT id FROM departamentos WHERE nombre = 'La Libertad')),
-('Piura', (SELECT id FROM departamentos WHERE nombre = 'Piura')),
-('Huancayo', (SELECT id FROM departamentos WHERE nombre = 'Junín')),
-('Chiclayo', (SELECT id FROM departamentos WHERE nombre = 'Lambayeque'))
-ON CONFLICT DO NOTHING;
-
--- Insertar sucursales de ejemplo
-INSERT INTO sucursales (nombre, provincia_id, direccion, latitud, longitud) VALUES
-('Sede Central Lima', 
- (SELECT id FROM provincias WHERE nombre = 'Lima'), 
- 'Av. Principal 123, Miraflores', -12.1220, -77.0286),
-('Sucursal Arequipa Plaza', 
- (SELECT id FROM provincias WHERE nombre = 'Arequipa'), 
- 'Plaza de Armas 456', -16.3989, -71.5375),
-('Sucursal Cusco Centro', 
- (SELECT id FROM provincias WHERE nombre = 'Cusco'), 
- 'Calle del Sol 789', -13.5167, -71.9788)
-ON CONFLICT DO NOTHING;
-
--- Insertar categorías
-INSERT INTO categorias (nombre) VALUES
-('Panes'),
-('Dulces'),
-('Salados'),
-('Bebidas'),
-('Postres'),
-('Especialidades')
-ON CONFLICT (nombre) DO NOTHING;
-
--- ===============================================
--- FIN DEL ESQUEMA
--- ===============================================

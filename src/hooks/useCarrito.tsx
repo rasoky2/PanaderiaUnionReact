@@ -1,33 +1,37 @@
-import { ReactNode, createContext, useContext, useState } from 'react';
-import { Producto } from '../types';
+/**
+ * Hook para gestión del carrito de compras
+ * @author Panadería Unión
+ * @version 1.0.0
+ */
+
+import React, { createContext, useContext, useMemo, useState } from 'react';
+import { ClienteDatos, Producto } from '../types';
 
 export interface CarritoItem {
   producto: Producto;
   cantidad: number;
 }
 
-export interface ClienteDatos {
-  nombre: string;
-  correo: string;
-  direccion: string;
-}
-
-export interface CarritoContextProps {
+interface CarritoContextProps {
   carrito: CarritoItem[];
   agregarAlCarrito: (_producto: Producto) => void;
-  quitarDelCarrito: (_productoId: string | number) => void;
+  quitarDelCarrito: (_productoId: number | string) => void;
   limpiarCarrito: () => void;
   cliente: ClienteDatos;
   setCliente: (_datos: ClienteDatos) => void;
   metodoPago: string;
   setMetodoPago: (_metodo: string) => void;
+  sucursalSeleccionada: string;
+  setSucursalSeleccionada: (_sucursal: string) => void;
 }
 
 const CarritoContext = createContext<CarritoContextProps | undefined>(
   undefined
 );
 
-export const CarritoProvider = ({ children }: { children: ReactNode }) => {
+export const CarritoProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
   const [cliente, setCliente] = useState<ClienteDatos>({
     nombre: '',
@@ -35,49 +39,60 @@ export const CarritoProvider = ({ children }: { children: ReactNode }) => {
     direccion: '',
   });
   const [metodoPago, setMetodoPago] = useState<string>('');
+  const [sucursalSeleccionada, setSucursalSeleccionada] = useState<string>('');
 
   const agregarAlCarrito = (producto: Producto) => {
-    setCarrito(prev => {
-      const existe = prev.find(item => item.producto.id === producto.id);
-      if (existe) {
-        return prev.map(item =>
+    setCarrito(prevCarrito => {
+      const itemExistente = prevCarrito.find(
+        item => item.producto.id === producto.id
+      );
+
+      if (itemExistente) {
+        return prevCarrito.map(item =>
           item.producto.id === producto.id
             ? { ...item, cantidad: item.cantidad + 1 }
             : item
         );
-      } else {
-        return [...prev, { producto, cantidad: 1 }];
       }
+      return [...prevCarrito, { producto, cantidad: 1 }];
     });
   };
 
-  const quitarDelCarrito = (productoId: string | number) => {
-    setCarrito(prev => prev.filter(item => item.producto.id !== productoId));
+  const quitarDelCarrito = (productoId: number | string) => {
+    setCarrito(prevCarrito =>
+      prevCarrito.filter(item => item.producto.id !== productoId)
+    );
   };
 
-  const limpiarCarrito = () => setCarrito([]);
+  const limpiarCarrito = () => {
+    setCarrito([]);
+  };
+
+  const value: CarritoContextProps = useMemo(
+    () => ({
+      carrito,
+      agregarAlCarrito,
+      quitarDelCarrito,
+      limpiarCarrito,
+      cliente,
+      setCliente,
+      metodoPago,
+      setMetodoPago,
+      sucursalSeleccionada,
+      setSucursalSeleccionada,
+    }),
+    [carrito, cliente, metodoPago, sucursalSeleccionada]
+  );
 
   return (
-    <CarritoContext.Provider
-      value={{
-        carrito,
-        agregarAlCarrito,
-        quitarDelCarrito,
-        limpiarCarrito,
-        cliente,
-        setCliente,
-        metodoPago,
-        setMetodoPago,
-      }}
-    >
-      {children}
-    </CarritoContext.Provider>
+    <CarritoContext.Provider value={value}>{children}</CarritoContext.Provider>
   );
 };
 
-export const useCarrito = () => {
+export const useCarrito = (): CarritoContextProps => {
   const context = useContext(CarritoContext);
-  if (!context)
-    throw new Error('useCarrito debe usarse dentro de CarritoProvider');
+  if (context === undefined) {
+    throw new Error('useCarrito debe ser usado dentro de CarritoProvider');
+  }
   return context;
 };

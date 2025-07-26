@@ -1,6 +1,18 @@
-import { ArrowForward, Storefront } from '@mui/icons-material';
-import { Box, Button, Chip, Container, Stack, Typography } from '@mui/material';
+import { ArrowForward, Logout, Person, Storefront } from '@mui/icons-material';
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Container,
+  Menu,
+  MenuItem,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useClienteAuth } from '../hooks/useClienteAuth';
 
 const COLOR_PRIMARY_MAIN = 'primary.main';
 const COLOR_PRIMARY_DARK = 'primary.dark';
@@ -9,9 +21,61 @@ const COLOR_GREY_200 = 'grey.200';
 const COLOR_GREY_700 = 'grey.700';
 const COLOR_WHITE = 'white';
 
+// Constantes para estilos repetidos
+const BUTTON_BASE_STYLES = {
+  fontWeight: 500,
+  textTransform: 'none' as const,
+  minWidth: 0,
+  boxShadow: 'none',
+  transition: 'all 0.2s ease',
+};
+
+const BUTTON_HOVER_STYLES = {
+  transform: 'translateY(-1px)',
+};
+
+const BUTTON_SHADOW_PRIMARY = '0 2px 8px rgba(220, 38, 38, 0.10)';
+const BUTTON_SHADOW_SECONDARY = '0 2px 8px rgba(0, 0, 0, 0.10)';
+
+const PRIMARY_BUTTON_STYLES = {
+  ...BUTTON_BASE_STYLES,
+  borderColor: COLOR_PRIMARY_MAIN,
+  color: COLOR_PRIMARY_MAIN,
+  px: 2,
+  py: 0.5,
+  borderRadius: 2,
+  fontSize: '0.85rem',
+  '&:hover': {
+    borderColor: COLOR_PRIMARY_DARK,
+    color: COLOR_PRIMARY_DARK,
+    backgroundColor: COLOR_GREY_100,
+    boxShadow: BUTTON_SHADOW_PRIMARY,
+    ...BUTTON_HOVER_STYLES,
+  },
+};
+
+const SECONDARY_BUTTON_STYLES = {
+  ...BUTTON_BASE_STYLES,
+  borderColor: COLOR_GREY_700,
+  color: COLOR_GREY_700,
+  px: 2,
+  py: 0.5,
+  borderRadius: 2,
+  fontSize: '0.85rem',
+  '&:hover': {
+    borderColor: COLOR_GREY_700,
+    color: COLOR_GREY_700,
+    backgroundColor: COLOR_GREY_100,
+    boxShadow: BUTTON_SHADOW_SECONDARY,
+    ...BUTTON_HOVER_STYLES,
+  },
+};
+
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { cliente, isAuthenticated, logout } = useClienteAuth();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   function handleLoginClick() {
     navigate('/login');
@@ -25,7 +89,149 @@ const Navbar = () => {
     navigate('/tienda');
   }
 
+  function handleClienteLoginClick() {
+    navigate('/cliente-login');
+  }
+
+  function handleClienteMenuClick(event: React.MouseEvent<HTMLElement>) {
+    setAnchorEl(event.currentTarget);
+  }
+
+  function handleClienteMenuClose() {
+    setAnchorEl(null);
+  }
+
+  function handleClienteLogout() {
+    logout();
+    handleClienteMenuClose();
+    navigate('/');
+  }
+
+  // Funciones nombradas para los handlers
+  function handleMenuItemClick() {
+    handleClienteMenuClose();
+  }
+
+  function handleLogoutClick() {
+    handleClienteLogout();
+  }
+
+  function handleTiendaButtonClick() {
+    handleTiendaClick();
+  }
+
+  function handleClienteMenuButtonClick(event: React.MouseEvent<HTMLElement>) {
+    handleClienteMenuClick(event);
+  }
+
+  function handleClienteLoginButtonClick() {
+    handleClienteLoginClick();
+  }
+
+  function handleEmployeesButtonClick() {
+    handleLoginClick();
+  }
+
   const isLoginPage = location.pathname === '/login';
+  const isClienteLoginPage = location.pathname === '/cliente-login';
+  const isClienteRegistroPage = location.pathname === '/cliente-registro';
+  const isTiendaVirtualPage = location.pathname === '/tienda';
+  const isCheckoutPage = location.pathname === '/checkout';
+  const isPaymentPage = location.pathname === '/payment';
+  const isHomePage = location.pathname === '/';
+
+  // Función para renderizar botones de autenticación
+  function renderAuthButtons() {
+    if (isHomePage) {
+      return null;
+    }
+
+    if (isAuthenticated) {
+      return (
+        <>
+          <Button
+            onClick={handleClienteMenuButtonClick}
+            variant='outlined'
+            startIcon={<Person />}
+            sx={{
+              borderColor: COLOR_PRIMARY_MAIN,
+              color: COLOR_PRIMARY_MAIN,
+              fontWeight: 500,
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontSize: '0.9rem',
+              minWidth: 0,
+              boxShadow: 'none',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                borderColor: COLOR_PRIMARY_DARK,
+                color: COLOR_PRIMARY_DARK,
+                backgroundColor: COLOR_GREY_100,
+                boxShadow: BUTTON_SHADOW_PRIMARY,
+                transform: 'translateY(-1px)',
+              },
+            }}
+          >
+            {cliente?.nombre}
+          </Button>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleClienteMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem onClick={handleMenuItemClick}>
+              <Avatar sx={{ width: 24, height: 24, mr: 1 }}>
+                {cliente?.nombre?.charAt(0)}
+              </Avatar>
+              {cliente?.nombre} {cliente?.apellido}
+            </MenuItem>
+            <MenuItem onClick={handleLogoutClick}>
+              <Logout sx={{ mr: 1, fontSize: 20 }} />
+              Cerrar sesión
+            </MenuItem>
+          </Menu>
+        </>
+      );
+    }
+
+    return (
+      <Button
+        onClick={handleClienteLoginButtonClick}
+        variant='outlined'
+        sx={PRIMARY_BUTTON_STYLES}
+      >
+        Iniciar Sesión
+      </Button>
+    );
+  }
+
+  // Función para renderizar botón de empleados
+  function renderEmployeesButton() {
+    if (isTiendaVirtualPage || isCheckoutPage || isPaymentPage) {
+      return null;
+    }
+
+    return (
+      <Button
+        onClick={handleEmployeesButtonClick}
+        variant='outlined'
+        endIcon={<ArrowForward />}
+        sx={SECONDARY_BUTTON_STYLES}
+      >
+        Empleados
+      </Button>
+    );
+  }
 
   return (
     <Box
@@ -83,10 +289,10 @@ const Navbar = () => {
               }}
             />
           </Stack>
-          {!isLoginPage && (
+          {!isLoginPage && !isClienteLoginPage && !isClienteRegistroPage && (
             <Stack direction='row' spacing={2}>
               <Button
-                onClick={handleTiendaClick}
+                onClick={handleTiendaButtonClick}
                 variant='contained'
                 startIcon={<Storefront />}
                 sx={{
@@ -98,7 +304,7 @@ const Navbar = () => {
                   borderRadius: 2.5,
                   fontSize: '1.05rem',
                   textTransform: 'none',
-                  boxShadow: '0 2px 8px rgba(220, 38, 38, 0.10)',
+                  boxShadow: BUTTON_SHADOW_PRIMARY,
                   transition: 'all 0.2s ease',
                   '&:hover': {
                     backgroundColor: COLOR_PRIMARY_DARK,
@@ -109,33 +315,9 @@ const Navbar = () => {
               >
                 Tienda Virtual
               </Button>
-              <Button
-                onClick={handleLoginClick}
-                variant='outlined'
-                endIcon={<ArrowForward />}
-                sx={{
-                  borderColor: COLOR_PRIMARY_MAIN,
-                  color: COLOR_PRIMARY_MAIN,
-                  fontWeight: 500,
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontSize: '0.85rem',
-                  minWidth: 0,
-                  boxShadow: 'none',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    borderColor: COLOR_PRIMARY_DARK,
-                    color: COLOR_PRIMARY_DARK,
-                    backgroundColor: COLOR_GREY_100,
-                    boxShadow: '0 2px 8px rgba(220, 38, 38, 0.10)',
-                    transform: 'translateY(-1px)',
-                  },
-                }}
-              >
-                Acceso Empleados
-              </Button>
+
+              {renderAuthButtons()}
+              {renderEmployeesButton()}
             </Stack>
           )}
         </Box>
