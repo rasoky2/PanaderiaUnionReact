@@ -10,6 +10,23 @@ import { Cliente, ClienteLogin, ClienteRegistro } from '../types';
 export const clienteService = {
   // Registrar un nuevo cliente
   async registrarCliente(datos: ClienteRegistro): Promise<Cliente> {
+    // Validar que el DNI esté presente
+    if (!datos.dni || datos.dni.length !== 8) {
+      throw new Error('El DNI es obligatorio y debe tener 8 dígitos');
+    }
+
+    // Verificar si el DNI ya existe
+    const dniExiste = await this.dniExiste(datos.dni);
+    if (dniExiste) {
+      throw new Error('El DNI ya está registrado');
+    }
+
+    // Verificar si el email ya existe
+    const emailExiste = await this.emailExiste(datos.email);
+    if (emailExiste) {
+      throw new Error('El email ya está registrado');
+    }
+
     // En una aplicación real, aquí hashearías la contraseña
     const password_hash = btoa(datos.password); // Solo para demo, usar bcrypt en producción
 
@@ -20,6 +37,7 @@ export const clienteService = {
         password_hash,
         nombre: datos.nombre,
         apellido: datos.apellido,
+        dni: datos.dni,
         celular: datos.celular,
         direccion: datos.direccion,
         departamento_id: datos.departamento_id,
@@ -94,6 +112,17 @@ export const clienteService = {
       .from('clientes')
       .select('id')
       .eq('email', email)
+      .single();
+
+    return !error && !!data;
+  },
+
+  // Verificar si el DNI ya existe
+  async dniExiste(dni: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('id')
+      .eq('dni', dni)
       .single();
 
     return !error && !!data;

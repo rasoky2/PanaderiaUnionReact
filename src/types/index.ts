@@ -148,6 +148,7 @@ export interface Cliente {
   password_hash: string;
   nombre: string;
   apellido: string;
+  dni?: string;
   celular?: string;
   ruc?: string;
   direccion?: string;
@@ -168,6 +169,7 @@ export interface ClienteRegistro {
   password: string;
   nombre: string;
   apellido: string;
+  dni?: string;
   celular?: string;
   ruc?: string;
   direccion?: string;
@@ -228,6 +230,7 @@ export interface PedidoItem {
   precio_unitario: number;
   subtotal: number;
   created_at: string;
+  producto?: Producto;
 }
 
 export interface SeguimientoPedido {

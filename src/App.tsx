@@ -15,6 +15,7 @@ import TiendaVirtual from './Pages/TiendaVirtual';
 import AdminDashboard from './Pages/admin/AdminDashboard';
 import AdminLayout from './Pages/admin/AdminLayout';
 import MapaNacional from './Pages/admin/MapaNacional';
+import PedidosPage from './Pages/admin/Pedidos';
 import ProductosPage from './Pages/admin/Productos';
 import ReportesPage from './Pages/admin/Reportes';
 import SolicitudesPage from './Pages/admin/Solicitudes';
@@ -241,6 +242,14 @@ function App() {
                 element={
                   <AdminLayout>
                     <ProductosPage />
+                  </AdminLayout>
+                }
+              />
+              <Route
+                path='/admin/pedidos'
+                element={
+                  <AdminLayout>
+                    <PedidosPage />
                   </AdminLayout>
                 }
               />

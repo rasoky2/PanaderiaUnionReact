@@ -46,6 +46,7 @@ const ClienteRegistroPage = () => {
     password: '',
     nombre: '',
     apellido: '',
+    dni: '',
     celular: '',
     ruc: '',
     direccion: '',
@@ -99,6 +100,18 @@ const ClienteRegistroPage = () => {
     if (name === 'celular') {
       const numericValue = String(value).replace(/\D/g, '');
       if (numericValue.length <= 9) {
+        setFormData({
+          ...formData,
+          [name as string]: numericValue,
+        });
+      }
+      return;
+    }
+
+    // Validación para DNI (exactamente 8 dígitos)
+    if (name === 'dni') {
+      const numericValue = String(value).replace(/\D/g, '');
+      if (numericValue.length <= 8) {
         setFormData({
           ...formData,
           [name as string]: numericValue,
@@ -200,6 +213,21 @@ const ClienteRegistroPage = () => {
                     name='apellido'
                     value={formData.apellido}
                     onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    required
+                    fullWidth
+                    label='DNI'
+                    name='dni'
+                    value={formData.dni}
+                    onChange={handleChange}
+                    inputProps={{
+                      maxLength: 8,
+                      pattern: '[0-9]*',
+                    }}
+                    helperText='8 dígitos (obligatorio)'
                   />
                 </Grid>
                 <Grid item xs={12}>
